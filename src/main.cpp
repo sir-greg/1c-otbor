@@ -1,14 +1,3 @@
-// Dear ImGui: standalone example application for SDL3 + OpenGL
-// (SDL is a cross-platform general purpose library for handling windows,
-// inputs, OpenGL/Vulkan/Metal graphics context creation, etc.)
-
-// Learn about Dear ImGui:
-// - FAQ                  https://dearimgui.com/faq
-// - Getting Started      https://dearimgui.com/getting-started
-// - Documentation        https://dearimgui.com/docs (same as your local docs/
-// folder).
-// - Introduction, links and more at the top of imgui.cpp
-
 #include "database.hpp"
 #include "imgui.h"
 #include "imgui_impl_opengl3.h"
@@ -25,18 +14,10 @@
 #include <string>
 #include <vector>
 
-#if defined(IMGUI_IMPL_OPENGL_ES2)
-#include <SDL3/SDL_opengles2.h>
-#else
 #include <SDL3/SDL_opengl.h>
-#endif
-
-#ifdef __EMSCRIPTEN__
-#include "../libs/emscripten/emscripten_mainloop_stub.h"
-#endif
 
 struct MealPlan {
-  std::vector<MealEntry> meals[3]; // 0=Morning, 1=Dinner, 2=Supper
+  std::vector<MealEntry> meals[3];
 };
 
 class AppState {
@@ -48,8 +29,8 @@ private:
   SDL_GLContext gl_context;
   const char *glsl_version;
 
-  const float left_panel_width = 260.0f;  // Dishes list
-  const float right_panel_width = 340.0f; // Add Dish form
+  const float left_panel_width = 260.0f;
+  const float right_panel_width = 340.0f;
 
 public:
   int Run() {
@@ -57,7 +38,6 @@ public:
       return 1;
     }
 
-    // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImPlot::CreateContext();
@@ -65,26 +45,10 @@ public:
 
     SetupDearImGuiAndFonts(io);
 
-    // Our state
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
-    // Main loop
     bool done = false;
     while (!done) {
-      // Poll and handle events (inputs, window resize, etc.)
-      // You can read the io.WantCaptureMouse, io.WantCaptureKeyboard flags to
-      // tell if dear imgui wants to use your inputs.
-      // - When io.WantCaptureMouse is true, do not dispatch mouse input data to
-      // your main application, or clear/overwrite your copy of the mouse data.
-      // - When io.WantCaptureKeyboard is true, do not dispatch keyboard input
-      // data to your main application, or clear/overwrite your copy of the
-      // keyboard data. Generally you may always pass all inputs to dear imgui,
-      // and hide them from your application based on those two flags. [If using
-      // SDL_MAIN_USE_CALLBACKS: call ImGui_ImplSDL3_ProcessEvent() from your
-      // SDL_AppEvent() function]
-
-      // [If using SDL_MAIN_USE_CALLBACKS: all code below would likely be your
-      // SDL_AppIterate() function]
       SDL_EventCycle(done);
 
       if (SDL_GetWindowFlags(window) & SDL_WINDOW_MINIMIZED) {
@@ -130,7 +94,6 @@ private:
     ImGui_ImplSDL3_NewFrame();
     ImGui::NewFrame();
 
-    // ===== Persistent state =====
     static Database db;
     static bool db_ready = false;
     if (!db_ready) {
@@ -143,7 +106,7 @@ private:
     static std::vector<Dish> dishes;
     static bool data_loaded = false;
     if (!data_loaded && db_ready) {
-      db.seed_ingredients_if_empty(); // populates on first launch only
+      db.seed_ingredients_if_empty();
       ingredients = db.load_ingredients();
       dishes = db.load_dishes();
       data_loaded = true;
@@ -188,17 +151,15 @@ private:
     static bool show_stats = false;
     static int stats_interval_idx = 2;
 
-    // Meal entry popup
     static bool show_entry_popup = false;
     static int popup_meal = -1;
     static int popup_entry_id = -1;
-    static int popup_kind = 0;    // 0 = dish, 1 = ingredient
-    static int popup_item_id = 0; // dish_id or ingredient_id
+    static int popup_kind = 0;   
+    static int popup_item_id = 0;
     static float popup_weight = 100.0f;
 
     static const char *meal_names[3] = {"Morning", "Dinner", "Supper"};
 
-    // ===== Helpers =====
     auto find_ingredient = [&](int id) -> Ingredient * {
       for (auto &g : ingredients)
         if (g.id == id)
@@ -243,7 +204,6 @@ private:
       return n;
     };
 
-    // Unified per-100g lookup for any meal entry
     auto entry_per_100g = [&](const MealEntry &e) -> Nutrition {
       Nutrition n;
       if (e.dish_id) {
@@ -280,7 +240,6 @@ private:
       return "(missing)";
     };
 
-    // Case-insensitive substring search
     auto icontains = [](const std::string &hay,
                         const std::string &needle) -> bool {
       if (needle.empty())
@@ -321,13 +280,11 @@ private:
       }
     };
 
-    // ===== Layout =====
     const float left_panel_width = 280.0f;
     const float right_panel_width = 380.0f;
     const float totals_height = 90.0f;
     const float menu_height = ImGui::GetFrameHeight();
 
-    // ===== Menu bar =====
     if (ImGui::BeginMainMenuBar()) {
       if (ImGui::BeginMenu("Menu")) {
         if (ImGui::MenuItem("Add dish"))
@@ -380,7 +337,6 @@ private:
       ImGui::EndMainMenuBar();
     }
 
-    // ===== Left panel: Library =====
     if (show_dishes_panel) {
       ImGui::SetNextWindowPos(ImVec2(0.0f, menu_height));
       ImGui::SetNextWindowSize(ImVec2(
@@ -427,7 +383,6 @@ private:
       ImGui::End();
     }
 
-    // ===== Right panel: Dish or Ingredient editor =====
     if (right_mode != RightMode::None) {
       const bool editing = (right_edit_index >= 0);
       const bool is_dish = (right_mode == RightMode::Dish);
@@ -448,7 +403,6 @@ private:
       if (!open)
         right_mode = RightMode::None;
 
-      // ---------- Ingredient editor ----------
       if (!is_dish) {
         ImGui::Text("Name");
         ImGui::SetNextItemWidth(-FLT_MIN);
@@ -528,7 +482,6 @@ private:
           }
         }
       }
-      // ---------- Dish editor ----------
       else {
         ImGui::Text("Name");
         ImGui::SetNextItemWidth(-FLT_MIN);
@@ -560,7 +513,6 @@ private:
 
             ImGui::SetNextItemWidth(-FLT_MIN);
             if (ImGui::BeginCombo("##ing", preview)) {
-              // One filter buffer, one combo open at a time
               static char filter_buf[128] = "";
               if (ImGui::IsWindowAppearing()) {
                 filter_buf[0] = '\0';
@@ -596,7 +548,6 @@ private:
               }
               ImGui::EndChild();
 
-              // Enter commits the first visible match
               if (commit && first_match_id != 0) {
                 di.ingredient_id = first_match_id;
                 filter_buf[0] = '\0';
@@ -696,7 +647,6 @@ private:
       ImGui::End();
     }
 
-    // ===== Center: Meal Plan =====
     if (show_meal_plan) {
       const float left_offset = show_dishes_panel ? left_panel_width : 0.0f;
       const float right_offset =
@@ -726,7 +676,6 @@ private:
           snprintf(child_id, sizeof(child_id), "##meal_%d", m);
           ImGui::BeginChild(child_id, ImVec2(0, 0), ImGuiChildFlags_Borders);
 
-          // Two add buttons side by side: dish | ingredient
           const float avail = ImGui::GetContentRegionAvail().x;
           const float half = (avail - ImGui::GetStyle().ItemSpacing.x) * 0.5f;
 
@@ -826,7 +775,6 @@ private:
       ImGui::End();
     }
 
-    // ===== Bottom: Totals =====
     {
       const float left_offset = show_dishes_panel ? left_panel_width : 0.0f;
       const float right_offset =
@@ -888,7 +836,6 @@ private:
       ImGui::End();
     }
 
-    // ===== Statistics window =====
     if (show_stats) {
       ImGui::SetNextWindowSize(ImVec2(820, 660), ImGuiCond_FirstUseEver);
       ImGui::Begin("Statistics", &show_stats);
@@ -1003,7 +950,6 @@ private:
       ImGui::End();
     }
 
-    // ===== Meal Entry popup (dish or ingredient) =====
     if (show_entry_popup) {
       ImGui::OpenPopup("Meal Entry");
       show_entry_popup = false;
@@ -1017,7 +963,6 @@ private:
       ImGui::Separator();
       ImGui::Spacing();
 
-      // Kind selector
       if (ImGui::RadioButton("Dish", popup_kind == 0)) {
         popup_kind = 0;
         popup_item_id = dishes.empty() ? 0 : dishes[0].id;
@@ -1030,11 +975,9 @@ private:
 
       ImGui::Spacing();
 
-      // Searchable combo depending on kind
       ImGui::Text(popup_kind == 0 ? "Dish" : "Ingredient");
       ImGui::SetNextItemWidth(320.0f);
 
-      // Build a unified (id, name) view over whichever list is active.
       struct ItemRef {
         int id;
         const std::string *name;
@@ -1108,7 +1051,6 @@ private:
       if (popup_weight < 0)
         popup_weight = 0;
 
-      // Live preview
       MealEntry preview_entry;
       preview_entry.dish_id = (popup_kind == 0) ? popup_item_id : 0;
       preview_entry.ingredient_id = (popup_kind == 1) ? popup_item_id : 0;
@@ -1166,7 +1108,6 @@ private:
       ImGui::EndPopup();
     }
 
-    // ===== Rendering =====
     ImGui::Render();
     glViewport(0, 0, (int)io.DisplaySize.x, (int)io.DisplaySize.y);
     glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w,
@@ -1177,65 +1118,28 @@ private:
   }
   void SetupDearImGuiAndFonts(ImGuiIO &io) {
     io.ConfigFlags |=
-        ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
+        ImGuiConfigFlags_NavEnableKeyboard;
     io.ConfigFlags |=
-        ImGuiConfigFlags_NavEnableGamepad; // Enable Gamepad Controls
+        ImGuiConfigFlags_NavEnableGamepad;
 
-    // Setup Dear ImGui style
     ImGuiStyle &style = ImGui::GetStyle();
     ImGui::StyleColorsDark();
-    // ImGui::StyleColorsLight();
-    // style.FontSizeBase = 16.0f;           // Default to 13.0f when
-    // unspecified, which allows crisp legacy font for non-4K screens.
     style.FrameRounding = 3.0f;
     style.GrabRounding = 3.0f;
 
-    // Setup scaling
     style.ScaleAllSizes(
-        main_scale); // Bake a fixed style scale. (until we have a solution for
-                     // dynamic style scaling, changing this requires resetting
-                     // Style + calling this again)
+        main_scale);
+                    
+                    
     style.FontScaleDpi =
-        main_scale; // Set initial font scale. (in docking branch: using
-                    // io.ConfigDpiScaleFonts=true automatically overrides this
-                    // for every window depending on the current monitor)
-
-    // Setup Platform/Renderer backends
+        main_scale;
+                   
+                   
     ImGui_ImplSDL3_InitForOpenGL(window, gl_context);
     ImGui_ImplOpenGL3_Init(glsl_version);
-
-    // Load Fonts
-    // - If fonts are not explicitly loaded, Dear ImGui will select an embedded
-    // font: either AddFontDefaultVector() or AddFontDefaultBitmap().
-    //   This selection is based on (style.FontSizeBase * style.FontScaleMain *
-    //   style.FontScaleDpi) reaching a threshold.
-    // - You can load multiple fonts and use ImGui::PushFont()/PopFont() to
-    // select them.
-    // - If a file cannot be loaded, AddFont functions will return a nullptr.
-    // Please handle those errors in your code (e.g. use an assertion, display
-    // an error and quit).
-    // - Read 'docs/FONTS.md' for more instructions and details.
-    // - Use '#define IMGUI_ENABLE_FREETYPE' in your imconfig file to use
-    // FreeType for higher quality font rendering.
-    // - Remember that in C/C++ if you want to include a backslash \ in a string
-    // literal you need to write a double backslash \\ !
-    // - Our Emscripten build process allows embedding fonts to be accessible at
-    // runtime from the "fonts/" folder. See Makefile.emscripten for details.
-    // io.Fonts->AddFontDefaultVector();
-    // io.Fonts->AddFontDefaultBitmap();
-    // io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\segoeui.ttf");
-    // io.Fonts->AddFontFromFileTTF("../../misc/fonts/DroidSans.ttf");
-    // io.Fonts->AddFontFromFileTTF("../../misc/fonts/Roboto-Medium.ttf");
-    // io.Fonts->AddFontFromFileTTF("../../misc/fonts/Cousine-Regular.ttf");
-    // ImFont* font =
-    // io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf");
-    // IM_ASSERT(font != nullptr);
   }
 
   void Cleanup() {
-    // Cleanup
-    // [If using SDL_MAIN_USE_CALLBACKS: all code below would likely be your
-    // SDL_AppQuit() function]
 
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplSDL3_Shutdown();
@@ -1248,47 +1152,18 @@ private:
   }
 
   int SomeSDLSetup() {
-    // Setup SDL
-    // [If using SDL_MAIN_USE_CALLBACKS: all code below until the main loop
-    // starts would likely be your SDL_AppInit() function]
     if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMEPAD)) {
       printf("Error: SDL_Init(): %s\n", SDL_GetError());
       return 1;
     }
 
-    // Select GL version + let the backend select a GLSL version
     glsl_version = nullptr;
-#if defined(IMGUI_IMPL_OPENGL_ES2)
-    // GL ES 2.0 + GLSL 100 (WebGL 1.0)
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, 0);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
-#elif defined(IMGUI_IMPL_OPENGL_ES3)
-    // GL ES 3.0 + GLSL 300 es (WebGL 2.0)
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, 0);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
-#elif defined(__APPLE__)
-    // GL 3.2 Core + generally GLSL 150
-    SDL_GL_SetAttribute(
-        SDL_GL_CONTEXT_FLAGS,
-        SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG); // Always required on Mac
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK,
-                        SDL_GL_CONTEXT_PROFILE_CORE);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
-#else
-    // GL 3.0 + generally GLSL 130
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, 0);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK,
                         SDL_GL_CONTEXT_PROFILE_CORE);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
-#endif
 
-    // Create window with graphics context
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
     SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
     SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
@@ -1310,7 +1185,7 @@ private:
     }
 
     SDL_GL_MakeCurrent(window, gl_context);
-    SDL_GL_SetSwapInterval(1); // Enable vsync
+    SDL_GL_SetSwapInterval(1);
     SDL_SetWindowPosition(window, SDL_WINDOWPOS_CENTERED,
                           SDL_WINDOWPOS_CENTERED);
     SDL_ShowWindow(window);
@@ -1319,7 +1194,6 @@ private:
   }
 };
 
-// Main code
 int main(int, char **) {
   AppState app_state;
   return app_state.Run();

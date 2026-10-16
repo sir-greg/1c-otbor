@@ -3,13 +3,9 @@
 #include <cstdio>
 #include <sqlite3.h>
 
-// ===== Impl struct (holds the sqlite3 handle) =====
-
 struct Database::Impl {
   sqlite3 *db = nullptr;
 };
-
-// ===== Lifecycle =====
 
 std::vector<Database::DatedMealEntry>
 Database::load_entries_in_range(const std::string &from,
@@ -106,7 +102,6 @@ bool Database::migrate_schema() {
   }
   return true;
 }
-// ===== Ingredients =====
 
 std::vector<Ingredient> Database::load_ingredients() {
   std::vector<Ingredient> out;
@@ -174,7 +169,6 @@ bool Database::delete_ingredient(int id) {
 }
 
 int Database::seed_ingredients_if_empty() {
-  // Bail early if there's already data.
   sqlite3_stmt *st = nullptr;
   if (sqlite3_prepare_v2(impl_->db, "SELECT COUNT(*) FROM ingredients;", -1,
                          &st, nullptr) != SQLITE_OK)
@@ -186,7 +180,6 @@ int Database::seed_ingredients_if_empty() {
   if (count > 0)
     return 0;
 
-  // name, kcal, protein, fat, carbs  (all per 100 g)
   struct Seed {
     const char *name;
     float k, p, f, c;
@@ -378,8 +371,6 @@ int Database::seed_ingredients_if_empty() {
   return added;
 }
 
-// ===== Dishes =====
-
 std::vector<Dish> Database::load_dishes() {
   std::vector<Dish> out;
   sqlite3_stmt *st = nullptr;
@@ -467,8 +458,6 @@ bool Database::delete_dish(int id) {
   return ok;
 }
 
-// ===== Meal entries =====
-
 std::vector<MealEntry> Database::load_entries(const std::string &date,
                                               int meal) {
   std::vector<MealEntry> out;
@@ -484,8 +473,8 @@ std::vector<MealEntry> Database::load_entries(const std::string &date,
   while (sqlite3_step(st) == SQLITE_ROW) {
     MealEntry e;
     e.id = sqlite3_column_int(st, 0);
-    e.dish_id = sqlite3_column_int(st, 1);       // 0 if NULL
-    e.ingredient_id = sqlite3_column_int(st, 2); // 0 if NULL
+    e.dish_id = sqlite3_column_int(st, 1);      
+    e.ingredient_id = sqlite3_column_int(st, 2);
     e.weight_g = (float)sqlite3_column_double(st, 3);
     out.push_back(e);
   }
@@ -542,8 +531,6 @@ bool Database::update_entry(int id, int dish_id, int ingredient_id,
 bool Database::delete_entry(int id) {
   return exec("DELETE FROM meal_entries WHERE id=?;", {std::to_string(id)});
 }
-
-// ===== Private helpers =====
 
 bool Database::write_composition(int dish_id,
                                  const std::vector<DishIngredient> &comp) {
@@ -606,7 +593,6 @@ int Database::bulk_insert_ingredients(const std::vector<Ingredient> &batch) {
 
   int added = 0;
   for (const auto &g : batch) {
-    // Skip duplicates by name
     sqlite3_reset(check);
     sqlite3_bind_text(check, 1, g.name.c_str(), -1, SQLITE_TRANSIENT);
     if (sqlite3_step(check) == SQLITE_ROW)
