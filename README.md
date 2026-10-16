@@ -22,4 +22,4 @@ cmake --build build
 
 Итоговый бинарник: *./build/app*
 
-
+Ссылка на демонстрацию приложения: https://youtu.be/fiDyA1XjmWM
